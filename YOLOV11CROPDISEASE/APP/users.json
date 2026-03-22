@@ -1,0 +1,18 @@
+{
+  "admin": {
+    "password": "scrypt:32768:8:1$dp3soPgsfMarl3dD$595c59d9a8207effd598e84c31d6999341b7ccbbfba067501d0e2220077677b24e437e899eef23e74cc1c700b23d746451e754c69a15c02411b534d79616401b",
+    "role": "admin"
+  },
+  "农技员1": {
+    "password": "scrypt:32768:8:1$bcE5lCaCLa4qzJhe$e8f5a48be2559d828bf8630a9997fa1ce3e8499535665af3310fbe3b745cd44c358e4a6ba772eaed1bb2ed90a49fd46aaec628a1cda4ef3f88dcbcf22c3068fe",
+    "role": "technician"
+  },
+  "农户1": {
+    "password": "scrypt:32768:8:1$GVU1tghiclvMFXiN$75db1487a49d3d9b939534444f6ec365c40eae201682175df2f23a5873cf9b834e34e545db0bafb478fec072f69ac14fc32e2f50e23c2a9b943bcdd967e74894",
+    "role": "user"
+  },
+  "test": {
+    "password": "scrypt:32768:8:1$BBk1cdPbjqg8k7N9$05c9e6d048dba61dc3905189069544af7dbd60f7de225bff9580a11363703248f00292e7d5f3b55c54f6ca3bd4a1f721a03d09bc8a0568984c7b5a883d0fa235",
+    "role": "user"
+  }
+}

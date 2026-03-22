@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频取图检测 - {{ username }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .video-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .video-preview {
+            width: 100%;
+            max-width: 640px;
+            height: 480px;
+            background-color: #000;
+            border-radius: 8px;
+            margin: 0 auto 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        #canvasElement {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+        
+        .video-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-group label {
+            font-weight: 500;
+            color: #333;
+            margin: 0;
+        }
+        
+        .control-group select {
+            padding: 8px 12px;
+            border: 2px solid #e3f2fd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .control-group select:focus {
+            outline: none;
+            border-color: #2E7D32;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15);
+        }
+        
+        .capture-result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .capture-result h3 {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        
+        .result-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .result-image {
+            flex-shrink: 0;
+            margin-right: 15px;
+        }
+        
+        .result-image img {
+            max-width: 100px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .result-info {
+            flex: 1;
+        }
+        
+        .result-info h4 {
+            margin: 0 0 5px 0;
+            text-align: left;
+            font-size: 16px;
+        }
+        
+        .result-meta {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .result-details {
+            font-size: 14px;
+        }
+        
+        .result-details span {
+            font-weight: 500;
+            color: #2E7D32;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+        
+        .status-idle {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .status-recording {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .status-detecting {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .status-success {
+            background-color: #e8f5e8;
+            color: #2E7D32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div class="user-info">欢迎，{{ username }}！【{{ role }}】</div>
+            <div>
+                <a href="{{ url_for('index') }}">返回检测</a>
+                <a href="{{ url_for('history') }}">检测历史</a>
+                <a href="{{ url_for('logout') }}">退出登录</a>
+            </div>
+        </div>
+
+        <h2>视频取图检测</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="video-container">
+            <div class="video-preview">
+                <video id="videoElement" autoplay muted></video>
+                <canvas id="canvasElement"></canvas>
+            </div>
+            
+            <div class="video-controls">
+                <button id="startCameraBtn">启动摄像头</button>
+                <button id="stopCameraBtn" disabled>停止摄像头</button>
+                <input type="file" id="videoFileInput" accept="video/*" style="display: none;">
+                <button id="uploadVideoBtn">上传视频文件</button>
+                <button id="captureBtn" disabled>抓拍</button>
+                <div class="control-group">
+                    <label for="intervalSelect">自动取图间隔：</label>
+                    <select id="intervalSelect">
+                        <option value="0">手动</option>
+                        <option value="3">3秒</option>
+                        <option value="5">5秒</option>
+                        <option value="10">10秒</option>
+                    </select>
+                </div>
+                <button id="startAutoCaptureBtn" disabled>开始自动取图</button>
+                <button id="stopAutoCaptureBtn" disabled>停止自动取图</button>
+                <span id="statusIndicator" class="status-indicator status-idle">就绪</span>
+            </div>
+            
+            <div class="capture-result">
+                <h3>检测结果</h3>
+                <div id="resultContainer">
+                    <p>暂无检测结果</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let video = document.getElementById('videoElement');
+        let canvas = document.getElementById('canvasElement');
+        let ctx = canvas.getContext('2d');
+        let stream = null;
+        let autoCaptureInterval = null;
+        let captureCount = 0;
+        let detectCount = 0;
+        let videoFile = null;
+        let videoPlayer = null;
+        
+        // 启动摄像头
+        document.getElementById('startCameraBtn').addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                document.getElementById('startCameraBtn').disabled = true;
+                document.getElementById('stopCameraBtn').disabled = false;
+                document.getElementById('captureBtn').disabled = false;
+                document.getElementById('startAutoCaptureBtn').disabled = false;
+                document.getElementById('statusIndicator').textContent = '摄像头已启动';
+                document.getElementById('statusIndicator').className = 'status-indicator status-recording';
+            } catch (error) {
+                alert('无法访问摄像头：' + error.message);
+                console.error('摄像头访问错误:', error);
+            }
+        });
+        
+        // 停止摄像头
+        document.getElementById('stopCameraBtn').addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                stream = null;
+            }
+            if (videoPlayer) {
+                videoPlayer.pause();
+                videoPlayer = null;
+            }
+            document.getElementById('startCameraBtn').disabled = false;
+            document.getElementById('stopCameraBtn').disabled = true;
+            document.getElementById('captureBtn').disabled = true;
+            document.getElementById('startAutoCaptureBtn').disabled = true;
+            document.getElementById('stopAutoCaptureBtn').disabled = true;
+            document.getElementById('statusIndicator').textContent = '就绪';
+            document.getElementById('statusIndicator').className = 'status-indicator status-idle';
+        });
+        
+        // 上传视频文件
+        document.getElementById('uploadVideoBtn').addEventListener('click', () => {
+            document.getElementById('videoFileInput').click();
+        });
+        
+        document.getElementById('videoFileInput').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                videoFile = file;
+                const videoURL = URL.createObjectURL(file);
+                video.src = videoURL;
+                videoPlayer = video;
+                video.play();
+                document.getElementById('startCameraBtn').disabled = true;
+                document.getElementById('stopCameraBtn').disabled = false;
+                document.getElementById('captureBtn').disabled = false;
+                document.getElementById('startAutoCaptureBtn').disabled = false;
+                document.getElementById('statusIndicator').textContent = '视频已加载';
+                document.getElementById('statusIndicator').className = 'status-indicator status-recording';
+            }
+        });
+        
+        // 抓拍
+        document.getElementById('captureBtn').addEventListener('click', () => {
+            captureFrame();
+        });
+        
+        // 开始自动取图
+        document.getElementById('startAutoCaptureBtn').addEventListener('click', () => {
+            const interval = parseInt(document.getElementById('intervalSelect').value);
+            if (interval > 0) {
+                autoCaptureInterval = setInterval(captureFrame, interval * 1000);
+                document.getElementById('startAutoCaptureBtn').disabled = true;
+                document.getElementById('stopAutoCaptureBtn').disabled = false;
+                document.getElementById('statusIndicator').textContent = `自动取图中 (${interval}秒间隔)`;
+                document.getElementById('statusIndicator').className = 'status-indicator status-recording';
+            }
+        });
+        
+        // 停止自动取图
+        document.getElementById('stopAutoCaptureBtn').addEventListener('click', () => {
+            if (autoCaptureInterval) {
+                clearInterval(autoCaptureInterval);
+                autoCaptureInterval = null;
+                document.getElementById('startAutoCaptureBtn').disabled = false;
+                document.getElementById('stopAutoCaptureBtn').disabled = true;
+                document.getElementById('statusIndicator').textContent = '自动取图已停止';
+                document.getElementById('statusIndicator').className = 'status-indicator status-idle';
+            }
+        });
+        
+        // 抓拍帧并检测
+        function captureFrame() {
+            captureCount++;
+            document.getElementById('statusIndicator').textContent = '检测中...';
+            document.getElementById('statusIndicator').className = 'status-indicator status-detecting';
+            
+            // 调整canvas大小
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // 绘制当前视频帧到canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // 将canvas转换为Blob
+            canvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('frame', blob, `video_capture_${Date.now()}.jpg`);
+                
+                // 发送到服务器进行检测
+                fetch('/detect_video_frame', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    detectCount++;
+                    if (data.status === 'success') {
+                        displayResult(data);
+                        document.getElementById('statusIndicator').textContent = `已抓拍 ${captureCount} 帧，检测完成 ${detectCount} 帧`;
+                        document.getElementById('statusIndicator').className = 'status-indicator status-success';
+                    } else {
+                        alert('检测失败：' + data.message);
+                        document.getElementById('statusIndicator').textContent = '检测失败';
+                        document.getElementById('statusIndicator').className = 'status-indicator status-idle';
+                    }
+                })
+                .catch(error => {
+                    console.error('检测请求错误:', error);
+                    alert('检测请求失败：' + error.message);
+                    document.getElementById('statusIndicator').textContent = '检测失败';
+                    document.getElementById('statusIndicator').className = 'status-indicator status-idle';
+                });
+            }, 'image/jpeg');
+        }
+        
+        // 显示检测结果
+        function displayResult(data) {
+            const resultContainer = document.getElementById('resultContainer');
+            
+            if (resultContainer.innerHTML === '<p>暂无检测结果</p>') {
+                resultContainer.innerHTML = '';
+            }
+            
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+            
+            const resultImage = document.createElement('div');
+            resultImage.className = 'result-image';
+            const img = document.createElement('img');
+            img.src = data.result_path;
+            img.alt = '检测结果';
+            resultImage.appendChild(img);
+            
+            const resultInfo = document.createElement('div');
+            resultInfo.className = 'result-info';
+            
+            const h4 = document.createElement('h4');
+            h4.textContent = data.img_name;
+            resultInfo.appendChild(h4);
+            
+            const meta = document.createElement('div');
+            meta.className = 'result-meta';
+            meta.textContent = `检测时间：${new Date().toLocaleString()}`;
+            resultInfo.appendChild(meta);
+            
+            const details = document.createElement('div');
+            details.className = 'result-details';
+            if (data.detections && data.detections.length > 0) {
+                const detection = data.detections[0];
+                details.innerHTML = `分类结果：<span>${detection.class}</span><br>置信度：<span>${(detection.confidence * 100).toFixed(1)}%</span><br>病害等级：<span>${detection.level}</span>`;
+            } else {
+                details.textContent = '未检测到病虫害';
+            }
+            resultInfo.appendChild(details);
+            
+            resultItem.appendChild(resultImage);
+            resultItem.appendChild(resultInfo);
+            resultContainer.appendChild(resultItem);
+        }
+    </script>
+</body>
+</html>

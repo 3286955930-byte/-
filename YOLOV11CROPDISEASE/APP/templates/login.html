@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>农业病虫害检测系统 - 登录</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-left">
+            <div class="login-left-content">
+                <h1>农业病虫害检测系统</h1>
+                <p>使用 YOLOv11 技术，智能识别农作物病虫害</p>
+                <p>提供专业防治方案，助力农业生产</p>
+                <div class="login-features">
+                    <div class="feature-item">
+                        <span class="feature-icon">📷</span>
+                        <span>智能图像识别</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🌱</span>
+                        <span>专业防治方案</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📊</span>
+                        <span>历史记录管理</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="login-right">
+            <div class="login-box">
+                <h2>用户登录</h2>
+                <h3>YOLOv11 智能检测</h3>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="username">用户名</label>
+                        <input type="text" id="username" name="username" required placeholder="请输入用户名">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">密码</label>
+                        <input type="password" id="password" name="password" required placeholder="请输入密码">
+                    </div>
+                    <button type="submit" class="btn-block">登录系统</button>
+                </form>
+
+                <div class="test-accounts">
+                    <p>测试账号：</p>
+                    <p>管理员：admin / 123456</p>
+                    <p>农技员：农技员1 / nongji123</p>
+                    <p>普通用户：农户1 / nonghu123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

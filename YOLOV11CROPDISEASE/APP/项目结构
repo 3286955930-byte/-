@@ -1,0 +1,18 @@
+crop_detection_system/
+├── app.py               # 主程序（登录+检测核心逻辑）
+├── model/               # 存放训练好的权重
+│   └── best.pt          # 你的GPU训练权重文件
+├── static/              # 静态资源
+│   ├── css/
+│   │   └── style.css    # 页面样式
+│   ├── images/          # 上传/检测后的图片存储
+│   │   ├── uploads/     # 用户上传的原图
+│   │   └── results/     # 检测后的可视化图片
+│   └── js/
+│       └── script.js    # 前端交互（可选）
+├── templates/           # 前端页面
+│   ├── login.html       # 登录界面
+│   ├── index.html       # 检测主界面
+│   └── result.html      # 检测结果展示页
+├── requirements.txt     # 依赖清单
+└── users.json           # 模拟用户数据库（可替换为MySQL）

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检测历史 - {{ username }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div class="user-info">欢迎，{{ username }}！【{{ role }}】</div>
+            <div>
+                <a href="{{ url_for('index') }}">返回检测</a>
+                <a href="{{ url_for('video_detect') }}">视频检测</a>
+                <a href="{{ url_for('manage_images') }}">图片管理</a>
+                <a href="{{ url_for('logout') }}">退出登录</a>
+            </div>
+        </div>
+
+        <h2>分类历史记录</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if records %}
+            <div class="history-cards">
+                {% for record in records %}
+                    <div class="history-card">
+                        {% if role == 'admin' %}
+                            <div class="card-user">用户：{{ record.username }}</div>
+                        {% endif %}
+                        <div class="card-content">
+                            <div class="card-image">
+                                {% if record.result_path %}
+                                    <a href="{{ url_for('static', filename=record.result_path) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename=record.result_path) }}" alt="结果图">
+                                    </a>
+                                {% else %}
+                                    <div class="no-image">无结果图</div>
+                                {% endif %}
+                            </div>
+                            <div class="card-info">
+                                <h3 class="card-title">{{ record.img_name }}</h3>
+                                <div class="card-meta">
+                                    <span class="detect-time">检测时间：{{ record.detect_time }}</span>
+                                </div>
+                                <div class="card-result">
+                                    <div class="result-item">
+                                        <span class="label">分类结果：</span>
+                                        <span class="value">
+                                            {% if record.diseases %}
+                                                {{ record.diseases[0].class if record.diseases else '无' }}
+                                            {% else %}
+                                                无
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">置信度：</span>
+                                        <span class="value">
+                                            {% if record.diseases %}
+                                                {{ "%.1f" | format(record.diseases[0].confidence * 100) }}%
+                                            {% else %}
+                                                无
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">病害程度：</span>
+                                        <span class="value">
+                                            {% if record.diseases %}
+                                                {{ record.diseases[0].level if record.diseases[0].level else '未知' }}
+                                            {% else %}
+                                                无
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if record.temp %}
+                                    <div class="env-data">
+                                        <span class="label">环境数据：</span>
+                                        <span class="value">温度：{{ record.temp }}℃ 湿度：{{ record.humidity }}% 降雨量：{{ record.rainfall }}mm</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <!-- 环境数据录入 -->
+                            <form class="env-form" method="POST" action="{{ url_for('add_env') }}">
+                                <input type="hidden" name="record_id" value="{{ record.id }}">
+                                <input type="number" name="temp" placeholder="温度(℃)" step="0.1" required>
+                                <input type="number" name="humidity" placeholder="湿度(%)" step="0.1" required>
+                                <input type="number" name="rainfall" placeholder="降雨量(mm)" step="0.1" required>
+                                <button type="submit" style="padding: 5px 10px; font-size: 12px;">添加环境数据</button>
+                            </form>
+                            <br>
+                            <!-- 删除记录按钮 -->
+                            <a href="{{ url_for('delete_record_route', record_id=record.id) }}" onclick="return confirm('确定要删除这条记录吗？')" style="padding: 5px 10px; font-size: 12px; background-color: #f44336; color: white; text-decoration: none; border-radius: 3px;">删除记录</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="flash-message success">暂无检测记录，请先进行检测！</div>
+        {% endif %}
+
+        {% if records %}
+            <br>
+            <a href="{{ url_for('delete_all_records_route') }}" onclick="return confirm('确定要删除所有记录吗？')" style="padding: 10px 20px; font-size: 14px; background-color: #f44336; color: white; text-decoration: none; border-radius: 3px; display: inline-block;">删除所有记录</a>
+        {% endif %}
+
+        <br><br>
+        <button onclick="window.location.href='{{ url_for('index') }}'" class="btn-block">返回检测</button>
+    </div>
+</body>
+</html>

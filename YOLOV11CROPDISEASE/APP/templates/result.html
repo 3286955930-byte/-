@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检测结果 - {{ img_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div class="user-info">欢迎，{{ username }}！【{{ role }}】</div>
+            <div>
+                <a href="{{ url_for('index') }}">继续检测</a>
+                <a href="{{ url_for('video_detect') }}">视频检测</a>
+                <a href="{{ url_for('history') }}">检测历史</a>
+                <a href="{{ url_for('manage_images') }}">图片管理</a>
+                <a href="{{ url_for('logout') }}">退出登录</a>
+            </div>
+        </div>
+
+        <h2>YOLOv11 检测结果</h2>
+
+        {% if detections %}
+            <div class="history-cards">
+                <div class="history-card">
+                    <div class="card-user">用户：{{ username }}</div>
+                    <div class="card-content">
+                        <div class="card-image">
+                            <a href="{{ url_for('static', filename=result_path) }}" target="_blank">
+                                <img src="{{ url_for('static', filename=result_path) }}" alt="检测结果" style="max-width: 100%; max-height: 200px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            </a>
+                        </div>
+                        <div class="card-info">
+                            <h3 class="card-title">{{ img_name }}</h3>
+                            <div class="card-meta">
+                                <span class="detect-time">检测时间：{{ current_time }}</span>
+                            </div>
+                            <div class="card-result">
+                                {% for det in detections %}
+                                    <div class="result-item">
+                                        <span class="label">分类结果：</span>
+                                        <span class="value">{{ det.class }}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">置信度：</span>
+                                        <span class="value">{{ "%.1f" | format(det.confidence * 100) }}%</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">病害程度：</span>
+                                        <span class="value">{{ det.level }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="strategy-box">
+                        <h3>💡 精准防治方案</h3>
+                        <p>{{ strategy }}</p>
+                        <h3>🌱 预防建议</h3>
+                        <p>{{ prevent }}</p>
+                    </div>
+                    <div class="card-actions">
+                        <!-- 环境数据录入 -->
+                        <form class="env-form" method="POST" action="{{ url_for('add_env') }}">
+                            <input type="hidden" name="record_id" value="{{ record_id }}">
+                            <input type="number" name="temp" placeholder="温度(℃)" step="0.1" required>
+                            <input type="number" name="humidity" placeholder="湿度(%)" step="0.1" required>
+                            <input type="number" name="rainfall" placeholder="降雨量(mm)" step="0.1" required>
+                            <button type="submit" style="padding: 5px 10px; font-size: 12px;">添加环境数据</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="flash-message success">未检测到病虫害，作物生长正常！</div>
+            <div class="history-cards">
+                <div class="history-card">
+                    <div class="card-user">用户：{{ username }}</div>
+                    <div class="card-content">
+                        <div class="card-image">
+                            <a href="{{ url_for('static', filename=result_path) }}" target="_blank">
+                                <img src="{{ url_for('static', filename=result_path) }}" alt="检测结果" style="max-width: 100%; max-height: 200px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            </a>
+                        </div>
+                        <div class="card-info">
+                            <h3 class="card-title">{{ img_name }}</h3>
+                            <div class="card-meta">
+                                <span class="detect-time">检测时间：{{ current_time }}</span>
+                            </div>
+                            <div class="card-result">
+                                <div class="result-item">
+                                    <span class="label">分类结果：</span>
+                                    <span class="value">健康</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="label">置信度：</span>
+                                    <span class="value">100.0%</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="label">病害程度：</span>
+                                    <span class="value">无</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="strategy-box">
+                        <h3>💡 精准防治方案</h3>
+                        <p>常规田间管理，无需药剂防治</p>
+                        <h3>🌱 预防建议</h3>
+                        <p>定期巡查，及时清除田间杂草；合理浇水施肥，预防病虫害发生</p>
+                    </div>
+                    <div class="card-actions">
+                        <!-- 环境数据录入 -->
+                        <form class="env-form" method="POST" action="{{ url_for('add_env') }}">
+                            <input type="hidden" name="record_id" value="{{ record_id }}">
+                            <input type="number" name="temp" placeholder="温度(℃)" step="0.1" required>
+                            <input type="number" name="humidity" placeholder="湿度(%)" step="0.1" required>
+                            <input type="number" name="rainfall" placeholder="降雨量(mm)" step="0.1" required>
+                            <button type="submit" style="padding: 5px 10px; font-size: 12px;">添加环境数据</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <br><br>
+        <button onclick="window.location.href='{{ url_for('index') }}'" class="btn-block">返回检测</button>
+    </div>
+</body>
+</html>

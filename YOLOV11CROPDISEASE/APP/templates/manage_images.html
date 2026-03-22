@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片管理 - {{ username }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .image-item {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        .image-item img {
+            max-width: 100%;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .image-actions {
+            margin-top: 10px;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h3 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div class="user-info">欢迎，{{ username }}！【{{ role }}】</div>
+            <div>
+                <a href="{{ url_for('index') }}">返回检测</a>
+                <a href="{{ url_for('video_detect') }}">视频检测</a>
+                <a href="{{ url_for('history') }}">检测历史</a>
+                <a href="{{ url_for('logout') }}">退出登录</a>
+            </div>
+        </div>
+
+        <h2>图片管理</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- 操作按钮 -->
+        <div style="margin-bottom: 20px;">
+            <a href="{{ url_for('delete_all_images') }}" onclick="return confirm('确定要删除所有图片吗？')" class="btn-danger">删除所有图片</a>
+        </div>
+
+        <!-- 上传图片 -->
+        <div class="section">
+            <h3>上传的图片</h3>
+            {% if uploads %}
+                <div class="image-grid">
+                    {% for image in uploads %}
+                        <div class="image-item">
+                            <img src="{{ url_for('static', filename='images/uploads/' + image) }}" alt="{{ image }}">
+                            <div style="margin-top: 10px; font-size: 12px; word-break: break-all;">{{ image }}</div>
+                            <div class="image-actions">
+                                <a href="{{ url_for('delete_image', image_type='upload', filename=image) }}" onclick="return confirm('确定要删除这张图片吗？')" class="btn-danger">删除</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="flash-message success">暂无上传的图片！</div>
+            {% endif %}
+        </div>
+
+        <!-- 结果图片 -->
+        <div class="section">
+            <h3>检测结果图片</h3>
+            {% if results %}
+                <div class="image-grid">
+                    {% for image in results %}
+                        <div class="image-item">
+                            <img src="{{ url_for('static', filename='images/results/' + image) }}" alt="{{ image }}">
+                            <div style="margin-top: 10px; font-size: 12px; word-break: break-all;">{{ image }}</div>
+                            <div class="image-actions">
+                                <a href="{{ url_for('delete_image', image_type='result', filename=image) }}" onclick="return confirm('确定要删除这张图片吗？')" class="btn-danger">删除</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="flash-message success">暂无检测结果图片！</div>
+            {% endif %}
+        </div>
+
+        <button onclick="window.location.href='{{ url_for('index') }}'" class="btn-block">返回检测</button>
+    </div>
+</body>
+</html>
